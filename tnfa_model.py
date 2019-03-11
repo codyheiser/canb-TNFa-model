@@ -1,7 +1,10 @@
-from pysb import *
-#from pysb.simulator import ScipyOdeSimulator
-from pysb.simulator.bng import BngSimulator
-from pysb.integrate import odesolve
+from pysb.core import *
+from pysb.bng import *
+from pysb.integrate import *
+from pysb.util import alias_model_components
+from pysb.simulator import ScipyOdeSimulator
+#from pysb.simulator.bng import BngSimulator
+#from pysb.integrate import odesolve
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -19,7 +22,7 @@ Monomer('DNA', ['a20t', 'ikbat'])
 Monomer('A20_mRNA')
 Monomer('IkBa_mRNA')
 
-Parameter('TNFa_init', 10) # eric set to 1
+Parameter('TNFa_init', 1) # eric set to 1
 Parameter('TNFR1_init', 1000)
 Parameter('IKKK_init', 10000)
 Parameter('IKK_init', 200000)
@@ -67,15 +70,15 @@ Parameter('kb', 0.000004)
 Parameter('q1', 0.00000015)
 Parameter('q2', 0.000001)
 
-#Observable('Total_TNFa', TNFa(tnfr1=None) + TNFa(tnfr1=1) % TNFR1(tnfa=1))
+Observable('Total_TNFa', TNFa(tnfr1=None) + TNFa(tnfr1=1) % TNFR1(tnfa=1))
 Observable('Unbound_TNFa', TNFa(tnfr1=None))
-#Observable('Bound_TNFa', TNFa(tnfr1=1) % TNFR1(tnfa=1))
-#Observable('Neutral_IKK', IKK(state='n'))
-#Observable('Active_IKK', IKK(state='a'))
-#Observable('i_IKK', IKK(state='i'))
-#Observable('ii_IKK', IKK(state='ii'))
-#Observable('Neutral_IKKK', IKKK(state='n'))
-#Observable('Active_IKKK', IKKK(state='a'))
+Observable('Bound_TNFa', TNFa(tnfr1=1) % TNFR1(tnfa=1))
+Observable('Neutral_IKK', IKK(state='n'))
+Observable('Active_IKK', IKK(state='a'))
+Observable('i_IKK', IKK(state='i'))
+Observable('ii_IKK', IKK(state='ii'))
+Observable('Neutral_IKKK', IKKK(state='n'))
+Observable('Active_IKKK', IKKK(state='a'))
 Observable('Total_A20', A20())
 Observable('Nuclear_IkBa', IkBa(loc='n'))
 Observable('Cytoplasmic_IkBa', IkBa(loc='c'))
@@ -133,19 +136,20 @@ print(model.parameters)
 print(model.observables)
 
 tspan = np.linspace(0, 1800, 60)
-print(tspan)
 
-x = odesolve(model, tspan, verbose=True)
+sim = ScipyOdeSimulator(model, tspan=tspan)
+sim_result = sim.run()
 
-print(model.species)
+# print(model.species)
 # for rxn in model.reactions:
 #     print(rxn)
 
-plt.figure('NFkB CanB Project')
-
+plt.figure('CANB 8347 Project', figsize=(10,7))
 for obs in model.observables:
     # plot all observables normalized to their maximum value
-    plt.plot(tspan, x[obs.name]/max(x[obs.name]), lw=2, label=obs.name)
+    plt.plot(tspan, sim_result.observables[obs.name]/max(sim_result.observables[obs.name]), lw=2, label=obs.name)
 
-plt.legend(loc=0)
+plt.xlabel('Time (hours)')
+plt.ylabel('Normalized Cellular Amount')
+plt.legend(loc='best', fontsize='small')
 plt.show()

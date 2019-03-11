@@ -19,7 +19,7 @@ Monomer('DNA', ['a20t', 'ikbat'])
 Monomer('A20_mRNA')
 Monomer('IkBa_mRNA')
 
-Parameter('TNFa_init', 10)
+Parameter('TNFa_init', 10) # eric set to 1
 Parameter('TNFR1_init', 1000)
 Parameter('IKKK_init', 10000)
 Parameter('IKK_init', 200000)
@@ -83,17 +83,17 @@ Observable('Nuclear_NFkB', NFkB(loc='n'))
 Observable('Cytoplasmic_NFkB', NFkB(loc='c'))
 
 Expression('r_activate', kb * Unbound_TNFa)
-Expression('A20_modifier_1', ka * (ka20 / (ka20 + Total_A20)))
-Expression('IKKa_Inactivation', k3 * ((ka20 + Total_A20) / k2))
+Expression('IKKKa_Inactivation', ka * ka20 / (ka20 + Total_A20))
+Expression('IKKa_Inactivation', k3 * ((k2 + Total_A20) / k2))
 
 Rule('TNFa_binds_TNFR1', TNFa(tnfr1=None) + TNFR1(tnfa=None) | TNFa(tnfr1=1) % TNFR1(tnfa=1), r_activate, kd)
 Rule('TNFR1_activates_IKKK',  TNFa(tnfr1=1) % TNFR1(tnfa=1) + IKKK(state='n') >> IKKK(state='a') +
-     TNFa(tnfr1=1) % TNFR1(tnfa=1), A20_modifier_1)
+     TNFa(tnfr1=1) % TNFR1(tnfa=1), IKKKa_Inactivation)
 Rule('IKKKa_deactivates', IKKK(state='a') >> IKKK(state='n'), ki)
 Rule('IKKKa_activates_IKK', IKKK(state='a') + IKK(state='n') >> IKKK(state='a') + IKK(state='a'), k1)
 Rule('IKKa_deactivates', IKK(state='a') >> IKK(state='n'), IKKa_Inactivation)
-Rule('IKKa_bind_A20', IKK(state='a') + A20() >> IKK(state='a') % A20(), k2)
-Rule('IKKa_to_IKKi', IKK(state='a') % A20() >> IKK(state='i') + A20(), k2)
+# Rule('IKKa_bind_A20', IKK(state='a') + A20() >> IKK(state='a') % A20(), k2)
+# Rule('IKKa_to_IKKi', IKK(state='a') % A20() >> IKK(state='i') + A20(), k2)
 Rule('IKKi_to_IKKiiIKKn', IKK(state='i') >> IKK(state='n'), k4)
 Rule('IKKa_phos_IkBa', IKK(state='a') + IkBa(nfkb=None, phos='u', loc='c') >> IKK(state='a')
      + IkBa(nfkb=None, phos='p', loc='c'), a2)
@@ -134,11 +134,12 @@ print(model.observables)
 
 tspan = np.linspace(0, 1800, 60)
 print(tspan)
+
 x = odesolve(model, tspan, verbose=True)
 
 print(model.species)
-for rxn in model.reactions:
-    print(rxn)
+# for rxn in model.reactions:
+#     print(rxn)
 
 plt.figure('NFkB CanB Project')
 

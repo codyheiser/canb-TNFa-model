@@ -47,7 +47,7 @@ Parameter('TNFa_init', 1) # will be overwritten by list (?)
 Parameter('TNFR1_init', 1000)
 Parameter('IKKK_init', 10000)
 Parameter('IKK_init', 200000)
-Parameter('A20_init', 10)
+Parameter('A20_init', 0)
 Parameter('IkBa_init', 135000)
 Parameter('NFkB_init', 100000)
 Parameter('DNA_init', 2)
@@ -126,8 +126,6 @@ Rule('IKKKa_activates_IKK', IKKK(state='a') + IKK(state='n') >> IKKK(state='a') 
 
 # IKK rules
 Rule('IKKa_deactivates', IKK(state='a') >> IKK(state='i'), IKKa_Inactivation)
-# Rule('IKKa_bind_A20', IKK(state='a') + A20() >> IKK(state='a') % A20(), k2)
-# Rule('IKKa_to_IKKi', IKK(state='a') % A20() >> IKK(state='i') + A20(), k2)
 Rule('IKKi_to_IKKn', IKK(state='i') >> IKK(state='n'), k4)
 Rule('IKKa_phos_IkBa', IKK(state='a') + IkBa(nfkb=None, phos='u', loc='c') >> IKK(state='a') + IkBa(nfkb=None, phos='p', loc='c'), a2)
 
@@ -165,6 +163,7 @@ Rule('IkBa_degraded', IkBa(nfkb=None, phos='p', loc='c') >> None, tp)
 Rule('IkBaNFkB_degraded', NFkB(ikba=2, dna=None, loc='c') % IkBa(nfkb=2, phos='p', loc='c') >> NFkB(ikba=None, dna=None, loc='c'), tp)
 Rule('A20_spont_degrad', A20() >> None, c5)
 
+# Debugging - prints out model rules and parameters
 #print(model.rules)
 #print(model.parameters)
 #print(model.observables)

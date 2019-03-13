@@ -6,6 +6,7 @@ from pysb.simulator import ScipyOdeSimulator
 #from pysb.simulator.bng import BngSimulator
 #from pysb.integrate import odesolve
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 
 Model()
@@ -22,12 +23,12 @@ Monomer('DNA', ['a20t', 'ikbat'])
 Monomer('A20_mRNA')
 Monomer('IkBa_mRNA')
 
-Parameter('TNFa_init', 1) # eric set to 1
+Parameter('TNFa_init', 1) # will be overwritten by list (?)
 Parameter('TNFR1_init', 1000)
 Parameter('IKKK_init', 10000)
 Parameter('IKK_init', 200000)
 Parameter('A20_init', 0)
-Parameter('IkBa_init', 0)
+Parameter('IkBa_init', 135000)
 Parameter('NFkB_init', 100000)
 Parameter('DNA_init', 2)
 Parameter('A20_mRNA_init', 1)
@@ -70,20 +71,20 @@ Parameter('kb', 0.000004)
 Parameter('q1', 0.00000015)
 Parameter('q2', 0.000001)
 
-Observable('Total_TNFa', TNFa(tnfr1=None) + TNFa(tnfr1=1) % TNFR1(tnfa=1))
+#Observable('Total_TNFa', TNFa(tnfr1=None) + TNFa(tnfr1=1) % TNFR1(tnfa=1))
 Observable('Unbound_TNFa', TNFa(tnfr1=None))
-Observable('Bound_TNFa', TNFa(tnfr1=1) % TNFR1(tnfa=1))
-Observable('Neutral_IKK', IKK(state='n'))
+#Observable('Bound_TNFa', TNFa(tnfr1=1) % TNFR1(tnfa=1))
+#Observable('Neutral_IKK', IKK(state='n'))
 Observable('Active_IKK', IKK(state='a'))
-Observable('i_IKK', IKK(state='i'))
-Observable('ii_IKK', IKK(state='ii'))
-Observable('Neutral_IKKK', IKKK(state='n'))
-Observable('Active_IKKK', IKKK(state='a'))
+#Observable('i_IKK', IKK(state='i'))
+#Observable('ii_IKK', IKK(state='ii'))
+#Observable('Neutral_IKKK', IKKK(state='n'))
+#Observable('Active_IKKK', IKKK(state='a'))
 Observable('Total_A20', A20())
-Observable('Nuclear_IkBa', IkBa(loc='n'))
-Observable('Cytoplasmic_IkBa', IkBa(loc='c'))
+#Observable('Nuclear_IkBa', IkBa(loc='n'))
+#Observable('Cytoplasmic_IkBa', IkBa(loc='c'))
 Observable('Nuclear_NFkB', NFkB(loc='n'))
-Observable('Cytoplasmic_NFkB', NFkB(loc='c'))
+#Observable('Cytoplasmic_NFkB', NFkB(loc='c'))
 
 Expression('r_activate', kb * Unbound_TNFa)
 Expression('IKKKa_Inactivation', ka * ka20 / (ka20 + Total_A20))
@@ -135,21 +136,30 @@ print(model.rules)
 print(model.parameters)
 print(model.observables)
 
-tspan = np.linspace(0, 1800, 60)
+tspan = np.linspace(0, 5400, 100) # from 0 to 90 minutes, in seconds
+tnf = [10, 1, 0.1, 0.01] # list of initial TNFa values to simulate with
 
 sim = ScipyOdeSimulator(model, tspan=tspan)
-sim_result = sim.run()
+sim_result = sim.run(initials = {TNFa(tnfr1=None): tnf})
+df = sim_result.dataframe
 
-# print(model.species)
-# for rxn in model.reactions:
-#     print(rxn)
-
-plt.figure('CANB 8347 Project', figsize=(10,7))
-for obs in model.observables:
-    # plot all observables normalized to their maximum value
-    plt.plot(tspan, sim_result.observables[obs.name]/max(sim_result.observables[obs.name]), lw=2, label=obs.name)
-
-plt.xlabel('Time (hours)')
+# plot results
+plt.figure('CANB 8347 Project', figsize=(8,4))
+plt.subplot(121)
+for n in range(0,4):
+    plt.plot(tspan/60, df.loc[n]['Active_IKK'].iloc[:], lw=2, label='Active IKK')
+plt.title('Active IKK')
+plt.xlabel('Time (min)')
 plt.ylabel('Normalized Cellular Amount')
-plt.legend(loc='best', fontsize='small')
+plt.legend(['10 ng/ml ', '1 ng/ml', '0.1 ng/ml', '0.01 ng/ml'] , title = '[TNFa]', loc=0, fontsize = 8)
+
+plt.subplot(122)
+for n in range(0,4):
+    plt.plot(tspan/60, df.loc[n]['Nuclear_NFkB'].iloc[:], lw=2, label='Nuclear NFkB')
+plt.title('Nuclear NFkB')
+plt.xlabel('Time (min)')
+plt.ylabel('Normalized Cellular Amount')
+plt.legend(['10 ng/ml ', '1 ng/ml', '0.1 ng/ml', '0.01 ng/ml'] , title = '[TNFa]', loc=0, fontsize = 8)
+
+plt.tight_layout()
 plt.show()
